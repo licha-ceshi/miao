@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>倒计时页面</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .time-input {
+            margin-bottom: 2rem;
+        }
+
+        .time-input label {
+            display: block;
+            margin: 0.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .time-input input {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 80px;
+            text-align: center;
+        }
+
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            font-size: 1.1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 0.5rem;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #45a049;
+        }
+
+        .btn-stop {
+            background: #f44336;
+        }
+
+        .btn-stop:hover {
+            background: #da190b;
+        }
+
+        .countdown {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .time-block {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 1rem;
+            border-radius: 10px;
+            min-width: 80px;
+        }
+
+        .time-value {
+            font-size: 3rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .time-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            display: block;
+            margin-top: 0.5rem;
+        }
+
+        .expired {
+            color: #ff6b6b;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .preset-buttons {
+            margin: 1rem 0;
+        }
+
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.5rem 1rem;
+            margin: 0.2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .preset-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⏰ 倒计时器</h1>
+
+        <div class="preset-buttons">
+            <button class="preset-btn" onclick="setPreset(5)">5分钟</button>
+            <button class="preset-btn" onclick="setPreset(10)">10分钟</button>
+            <button class="preset-btn" onclick="setPreset(30)">30分钟</button>
+            <button class="preset-btn" onclick="setPreset(60)">1小时</button>
+            <button class="preset-btn" onclick="setPreset(120)">2小时</button>
+        </div>
+
+        <div class="time-input">
+            <label>自定义时间：</label>
+            <input type="number" id="hours" placeholder="时" min="0"> 时
+            <input type="number" id="minutes" placeholder="分" min="0" max="59"> 分
+            <input type="number" id="seconds" placeholder="秒" min="0" max="59"> 秒
+        </div>
+
+        <div>
+            <button class="btn" onclick="startCountdown()">开始倒计时</button>
+            <button class="btn btn-stop" onclick="stopCountdown()">停止</button>
+            <button class="btn" onclick="resetCountdown()">重置</button>
+        </div>
+
+        <div class="countdown" id="countdown">
+            <div class="time-block">
+                <span class="time-value" id="hours-display">00</span>
+                <span class="time-label">小时</span>
+            </div>
+            <div class="time-block">
+                <span class="time-value" id="minutes-display">00</span>
+                <span class="time-label">分钟</span>
+            </div>
+            <div class="time-block">
+                <span class="time-value" id="seconds-display">00</span>
+                <span class="time-label">秒</span>
+            </div>
+        </div>
+
+        <div id="expired-message" class="expired" style="display: none;">
+            ⏰ 时间到！
+        </div>
+    </div>
+
+    <script>
+        let countdownInterval;
+        let targetTime = 0;
+
+        function setPreset(minutes) {
+            document.getElementById('hours').value = Math.floor(minutes / 60);
+            document.getElementById('minutes').value = minutes % 60;
+            document.getElementById('seconds').value = 0;
+        }
+
+        function startCountdown() {
+            const hours = parseInt(document.getElementById('hours').value) || 0;
+            const minutes = parseInt(document.getElementById('minutes').value) || 0;
+            const seconds = parseInt(document.getElementById('seconds').value) || 0;
+
+            if (hours === 0 && minutes === 0 && seconds === 0) {
+                alert('请设置倒计时时间！');
+                return;
+            }
+
+            targetTime = new Date().getTime() + (hours * 3600 + minutes * 60 + seconds) * 1000;
+
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            document.getElementById('expired-message').style.display = 'none';
+            countdownInterval = setInterval(updateCountdown, 1000);
+            updateCountdown();
+        }
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = targetTime - now;
+
+            if (distance < 0) {
+                clearInterval(countdownInterval);
+                document.getElementById('countdown').style.display = 'none';
+                document.getElementById('expired-message').style.display = 'block';
+
+                // 播放提示音（如果浏览器支持）
+                try {
+                    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTcIG2m98OScTgwOUKzn77RkHAU6k9n0z3wqBSJ0xe/eizEIHWq+8+OWT');
+                    audio.play();
+                } catch (e) {
+                    // 忽略音频播放错误
+                }
+
+                return;
+            }
+
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById('hours-display').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('minutes-display').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('seconds-display').textContent = seconds.toString().padStart(2, '0');
+        }
+
+        function stopCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+        }
+
+        function resetCountdown() {
+            stopCountdown();
+            targetTime = 0;
+            document.getElementById('hours-display').textContent = '00';
+            document.getElementById('minutes-display').textContent = '00';
+            document.getElementById('seconds-display').textContent = '00';
+            document.getElementById('expired-message').style.display = 'none';
+            document.getElementById('countdown').style.display = 'flex';
+            document.getElementById('hours').value = '';
+            document.getElementById('minutes').value = '';
+            document.getElementById('seconds').value = '';
+        }
+
+        // 回车键开始倒计时
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                startCountdown();
+            }
+        });
+    </script>
+</body>
+</html>
